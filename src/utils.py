@@ -32,12 +32,12 @@ def evaluate_coil_config(coil_config: CoilConfig,
 
     # Create a dictionary to store the results
     result = {
-        "best_coil_phase": list(coil_config.phase),
-        "best_coil_amplitude": list(coil_config.amplitude),
-        "best_coil_config_cost": best_coil_config_cost,
-        "default_coil_config_cost": default_coil_config_cost,
-        "cost_improvement_absolute": cost_improvement_absolute,
-        "cost_improvement_relative": cost_improvement_relative,
+        "best_coil_phase": [float(x) for x in coil_config.phase.detach().cpu().numpy()],
+        "best_coil_amplitude": [float(x) for x in coil_config.amplitude.detach().cpu().numpy()],
+        "best_coil_config_cost": float(best_coil_config_cost.detach().numpy()),
+        "default_coil_config_cost": float(default_coil_config_cost.detach().numpy()),
+        "cost_improvement_absolute": float(cost_improvement_absolute.detach().numpy()),
+        "cost_improvement_relative": float(cost_improvement_relative.detach().numpy()),
         "cost_function_name": cost_function.__class__.__name__,
         "cost_function_direction": cost_function.direction,
         "simulation_data": simulation_data.simulation_name,

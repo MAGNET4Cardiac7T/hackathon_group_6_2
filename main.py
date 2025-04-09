@@ -16,5 +16,6 @@ def run(simulation: Simulation,
             timeout: Time (in seconds) after which the evaluation script will be terminated
     """
     optimizer = DummyOptimizer(cost_function=cost_function)
+
     best_coil_config = optimizer.optimize(simulation)
     return best_coil_config

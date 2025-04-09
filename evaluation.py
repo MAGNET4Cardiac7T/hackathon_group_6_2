@@ -9,7 +9,7 @@ import json
 
 if __name__ == "__main__":
     # Load simulation data
-    simulation = Simulation("data/simulations/children_2_tubes_7_id_3012.h5")
+    simulation = Simulation("data/simulations/children_0_tubes_5_id_12346.h5")
     
     # Define cost function
     cost_function = B1HomogeneityCost()

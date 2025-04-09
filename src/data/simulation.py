@@ -1,14 +1,10 @@
-
-import numpy.typing as npt
-import numpy as np
-import h5py
 import os
+import h5py
+import torch
 import einops
 
 from typing import Tuple
 from .dataclasses import SimulationRawData, SimulationData, CoilConfig
-
-
 
 class Simulation:
     def __init__(self, 
@@ -22,27 +18,34 @@ class Simulation:
     def _load_raw_simulation_data(self) -> SimulationRawData:
         # Load raw simulation data from path
         
-        def read_field() -> Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]:
-            with h5py.File(self.path) as f:
-                re_efield, im_efield = f["efield"]["re"][:], f["efield"]["im"][:]
-                re_hfield, im_hfield = f["hfield"]["re"][:], f["hfield"]["im"][:]
-                field = np.stack([np.stack([re_efield, im_efield], axis=0), np.stack([re_hfield, im_hfield], axis=0)], axis=0)
+        def read_field() -> torch.Tensor:
+            with h5py.File(self.path, 'r') as f:
+                re_efield = torch.tensor(f["efield"]["re"][:], dtype=torch.float32)
+                im_efield = torch.tensor(f["efield"]["im"][:], dtype=torch.float32)
+                re_hfield = torch.tensor(f["hfield"]["re"][:], dtype=torch.float32)
+                im_hfield = torch.tensor(f["hfield"]["im"][:], dtype=torch.float32)
+                # First, stack the real and imaginary parts for the efield and hfield separately.
+                efield = torch.stack([re_efield, im_efield], dim=0)
+                hfield = torch.stack([re_hfield, im_hfield], dim=0)
+                # Then, stack both fields along a new dimension.
+                field = torch.stack([efield, hfield], dim=0)
             return field
 
-        def read_physical_properties() -> npt.NDArray[np.float32]:
-            with h5py.File(self.path) as f:
-                physical_properties = f["input"][:]
+        def read_physical_properties() -> torch.Tensor:
+            with h5py.File(self.path, 'r') as f:
+                physical_properties = torch.tensor(f["input"][:], dtype=torch.float32)
             return physical_properties
         
-        def read_subject_mask() -> npt.NDArray[np.bool_]:
-            with h5py.File(self.path) as f:
-                subject = f["subject"][:]
-            subject = np.max(subject, axis=-1)
+        def read_subject_mask() -> torch.Tensor:
+            with h5py.File(self.path, 'r') as f:
+                subject = torch.tensor(f["subject"][:], dtype=torch.bool)
+            # Take maximum along the last axis to obtain a reduced mask.
+            subject = torch.max(subject, dim=-1).values
             return subject
         
-        def read_coil_mask() -> npt.NDArray[np.float32]:
-            with h5py.File(self.coil_path) as f:
-                coil = f["masks"][:]
+        def read_coil_mask() -> torch.Tensor:
+            with h5py.File(self.coil_path, 'r') as f:
+                coil = torch.tensor(f["masks"][:], dtype=torch.float32)
             return coil
         
         def read_simulation_name() -> str:
@@ -59,25 +62,33 @@ class Simulation:
         return simulation_raw_data
     
     def _shift_field(self, 
-                     field: npt.NDArray[np.float32], 
-                     phase: npt.NDArray[np.float32], 
-                     amplitude: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+                     field: torch.Tensor, 
+                     phase: torch.Tensor, 
+                     amplitude: torch.Tensor) -> torch.Tensor:
         """
-        Shift the field calculating field_shifted = field * amplitude (e ^ (phase * 1j)) and summing over all coils.
+        Shift the field calculating field_shifted = field * amplitude * (e^(1j * phase)) 
+        and summing over all coils.
         """
-        re_phase = np.cos(phase) * amplitude
-        im_phase = np.sin(phase) * amplitude
-        coeffs_real = np.stack((re_phase, -im_phase), axis=0)
-        coeffs_im = np.stack((im_phase, re_phase), axis=0)
-        coeffs = np.stack((coeffs_real, coeffs_im), axis=0)
+        # Create the real and imaginary parts of the phase factors.
+        re_phase = torch.cos(phase) * amplitude
+        im_phase = torch.sin(phase) * amplitude
+        # Stack them: shape becomes (2, coils)
+        coeffs_real = torch.stack((re_phase, -im_phase), dim=0)
+        coeffs_im = torch.stack((im_phase, re_phase), dim=0)
+        # Combine into a 2x2 tensor for each coil.
+        coeffs = torch.stack((coeffs_real, coeffs_im), dim=0)
+        # Expand coefficients along a new dimension 'hf' (for field type) so that
+        # the shape fits field: repeat along hf dimension to match the two field types.
         coeffs = einops.repeat(coeffs, 'reimout reim coils -> hf reimout reim coils', hf=2)
+        # Use einops.einsum to shift the field:
+        # The equation multiplies the field by the phase/amplitude coefficients and sums over the coil dimension.
         field_shift = einops.einsum(field, coeffs, 'hf reim fieldxyz ... coils, hf reimout reim coils -> hf reimout fieldxyz ...')
         return field_shift
 
     def phase_shift(self, coil_config: CoilConfig) -> SimulationData:
-        
-        field_shifted = self._shift_field(self.simulation_raw_data.field, coil_config.phase, coil_config.amplitude)
-        
+        field_shifted = self._shift_field(self.simulation_raw_data.field, 
+                                          coil_config.phase, 
+                                          coil_config.amplitude)
         simulation_data = SimulationData(
             simulation_name=self.simulation_raw_data.simulation_name,
             properties=self.simulation_raw_data.properties,

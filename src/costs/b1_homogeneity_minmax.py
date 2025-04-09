@@ -1,9 +1,7 @@
+import torch
 from .base import BaseCost
 from ..data.simulation import SimulationData
 from ..data.utils import B1Calculator
-
-import numpy as np
-
 
 class B1HomogeneityMinMaxCost(BaseCost):
     def __init__(self) -> None:
@@ -11,10 +9,20 @@ class B1HomogeneityMinMaxCost(BaseCost):
         self.direction = "maximize"
         self.b1_calculator = B1Calculator()
 
-    def calculate_cost(self, simulation_data: SimulationData) -> float:
+    def calculate_cost(self, simulation_data: SimulationData) -> torch.Tensor:
+        # Compute the B1 field as a torch tensor.
         b1_field = self.b1_calculator(simulation_data)
-        subject = simulation_data.subject
-        
-        b1_field_abs = np.abs(b1_field)
+        subject = simulation_data.subject  # Assumed to be a boolean mask or index tensor for torch indexing
+
+        # Compute the absolute value using torch operations.
+        b1_field_abs = torch.abs(b1_field)
+        # Select the subject voxels from the B1 field.
         b1_field_subject_voxels = b1_field_abs[subject]
-        return np.mean(b1_field_subject_voxels)/(np.max(b1_field_subject_voxels) - np.min(b1_field_subject_voxels))
+
+        # Calculate the numerator and denominator using torch's mean, max, and min.
+        numerator = torch.mean(b1_field_subject_voxels)
+        denominator = torch.max(b1_field_subject_voxels) - torch.min(b1_field_subject_voxels)
+
+        # Return the ratio as the cost.
+        cost = numerator / denominator
+        return cost
