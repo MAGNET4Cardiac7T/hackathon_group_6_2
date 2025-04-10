@@ -31,3 +31,4 @@ torchvision==0.21.0
 tqdm==4.67.1
 typing_extensions==4.13.1
 h5py
+einops
