@@ -3,6 +3,7 @@ from src.optimizers import DummyOptimizer
 from src.data import Simulation, CoilConfig
 
 import numpy as np
+import torch
 
 def run(simulation: Simulation, 
         cost_function: BaseCost,
@@ -17,7 +18,7 @@ def run(simulation: Simulation,
     """
     direction = "maximize"
     optimizer = DummyOptimizer(cost_function=cost_function)
-    best_score = -np.inf if direction == "maximize" else np.inf
+    best_score = -torch.inf if direction == "maximize" else torch.inf
         
     for i in range(25):
         config = optimizer.optimize(simulation)

@@ -1,7 +1,7 @@
 from main import run
 
 from src.costs import B1HomogeneityCost
-from src.costs import SARCost
+from src.costs import B1HomogeneitySARCost
 from src.data import Simulation
 from src.utils import evaluate_coil_config
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     simulation = Simulation("data/simulations/children_1_tubes_6_id_23713.h5")
     
     # Define cost function
-    cost_function = B1HomogeneityCost()
+    cost_function = B1HomogeneitySARCost()
     
     # Run optimization
     best_coil_config = run(simulation=simulation, cost_function=cost_function)
