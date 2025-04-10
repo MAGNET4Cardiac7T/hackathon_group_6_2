@@ -19,7 +19,7 @@ def run(simulation: Simulation,
     optimizer = DummyOptimizer(cost_function=cost_function)
     best_score = -np.inf if direction == "maximize" else np.inf
         
-    for i in range(3):
+    for i in range(25):
         config = optimizer.optimize(simulation)
         
         simulation_data = simulation(config)

@@ -92,12 +92,27 @@ class Simulation:
         coeffs = torch.stack((coeffs_real, coeffs_im), axis=0)
         coeffs = einops.repeat(coeffs, 'reimout reim coils -> hf reimout reim coils', hf=2)
         
+        original_shape = field.shape  # For later use
         slices = self.crop_to_mask(self.simulation_raw_data.subject)
         masked_field = field[:, :, :,slices[0],slices[1],slices[2], :]  # shape: (2, 2, 3, N, 8), where N = number of True voxels
         
         field_shift = einops.einsum(masked_field, coeffs, 'hf reim fieldxyz ... coils, hf reimout reim coils -> hf reimout fieldxyz ...')
         
-        return field_shift
+        restored = torch.zeros(
+            (original_shape[0],  # hf
+            original_shape[1],  # reimout (maybe different from input)
+            original_shape[2],  # fieldxyz
+            original_shape[3],     # full spatial X
+            original_shape[4],     # full spatial Y
+            original_shape[5],     # full spatial Z
+            ),
+            dtype=field_shift.dtype,
+            device=field_shift.device
+        )
+
+        # Insert the processed region back into the original space
+        restored[:, :, :, slices[0], slices[1], slices[2]] = field_shift
+        return restored
 
     def phase_shift(self, coil_config: CoilConfig) -> SimulationData:
         field_shifted = self._shift_field(self.simulation_raw_data.field, 
