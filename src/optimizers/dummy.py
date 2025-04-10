@@ -2,13 +2,13 @@ from ..data.simulation import Simulation, SimulationData, CoilConfig
 from ..costs.base import BaseCost
 from .base import BaseOptimizer
 
-from typing import Callable
+#from typing import Callable
 import torch
 import torch.nn as nn
 from torch.optim import Adam
 import numpy as np
 
-from tqdm import trange
+#from tqdm import trange
 
 
 class DummyOptimizer(BaseOptimizer):
@@ -44,8 +44,8 @@ class DummyOptimizer(BaseOptimizer):
         best_cost = -np.inf if self.direction == "maximize" else np.inf
         best_coil_config = None
 
-        pbar = trange(self.max_iter)
-        for i in pbar:
+        #pbar = trange(self.max_iter)
+        for i in range(self.max_iter):
             optimizer.zero_grad()
             # Map u to a valid coil configuration.
             coil_config = self._get_coil_config_from_u(u)
@@ -67,8 +67,9 @@ class DummyOptimizer(BaseOptimizer):
                 # Create a new CoilConfig with cloned tensors.
                 best_coil_config = CoilConfig(phase=coil_config.phase.clone(), 
                                               amplitude=coil_config.amplitude.clone())
-
-            pbar.set_postfix_str(f"Loss: {loss.item():.4f} | Best cost: {best_cost:.4f}")
+            #if i % 10 == 0:
+            #    print(f"Epoch {i} loss:", current_cost)
+            #pbar.set_postfix_str(f"Loss: {loss.item():.4f} | Best cost: {best_cost:.4f}")
 
         # Return the coil configuration corresponding to the best cost found.
         return best_coil_config

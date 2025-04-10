@@ -1,11 +1,8 @@
 from main import run
-
 from src.costs import B1HomogeneityCost
 from src.costs import B1HomogeneitySARCost
 from src.data import Simulation
 from src.utils import evaluate_coil_config
-
-import numpy as np
 import json
 
 if __name__ == "__main__":   
@@ -16,7 +13,7 @@ if __name__ == "__main__":
     cost_function = B1HomogeneitySARCost()
     
     # Run optimization
-    best_coil_config = run(simulation=simulation, cost_function=cost_function)
+    best_coil_config = run(simulation=simulation, cost_function=cost_function, iterations=100)
     
     # Evaluate best coil configuration
     result = evaluate_coil_config(best_coil_config, simulation, cost_function)
