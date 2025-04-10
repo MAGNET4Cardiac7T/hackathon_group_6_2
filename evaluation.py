@@ -1,15 +1,16 @@
 from main import run
 
 from src.costs import B1HomogeneityCost
+from src.costs import SARCost
 from src.data import Simulation
 from src.utils import evaluate_coil_config
 
 import numpy as np
 import json
 
-if __name__ == "__main__":
+if __name__ == "__main__":   
     # Load simulation data
-    simulation = Simulation("data/simulations/children_0_tubes_5_id_12346.h5")
+    simulation = Simulation("data/simulations/children_1_tubes_6_id_23713.h5")
     
     # Define cost function
     cost_function = B1HomogeneityCost()

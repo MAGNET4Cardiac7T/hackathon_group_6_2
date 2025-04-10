@@ -15,7 +15,18 @@ def run(simulation: Simulation,
             cost_function: Cost function object
             timeout: Time (in seconds) after which the evaluation script will be terminated
     """
+    direction = "maximize"
     optimizer = DummyOptimizer(cost_function=cost_function)
+    best_score = -np.inf if direction == "maximize" else np.inf
+        
+    for i in range(3):
+        config = optimizer.optimize(simulation)
+        
+        simulation_data = simulation(config)
 
-    best_coil_config = optimizer.optimize(simulation)
+        score = cost_function(simulation_data)
+        
+        if score > best_score:
+            best_score = score
+            best_coil_config = config
     return best_coil_config

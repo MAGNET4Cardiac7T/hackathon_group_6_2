@@ -23,7 +23,7 @@ class DummyOptimizer(BaseOptimizer):
     It is assumed that the simulation and the cost function are compatible with PyTorch's automatic differentiation.
     """
     
-    def __init__(self, cost_function: BaseCost, max_iter: int = 200, lr: float = 0.1) -> None:
+    def __init__(self, cost_function: BaseCost, max_iter: int = 60, lr: float = 0.1) -> None:
         super().__init__(cost_function)
         self.max_iter = max_iter
         self.lr = lr
